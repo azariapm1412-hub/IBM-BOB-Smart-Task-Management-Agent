@@ -1,0 +1,325 @@
+ <!DOCTYPE html>
+<html lang="id" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="TaskFlow – Aplikasi manajemen tugas cerdas untuk mahasiswa dan pekerja pemula" />
+  <title>TaskFlow – Kelola Tugasmu</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- =========================================================
+       APP SHELL
+  ========================================================= -->
+  <div id="app" class="app-shell">
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="sidebar" aria-label="Navigasi samping">
+      <div class="sidebar-header">
+        <span class="logo" aria-hidden="true">✦</span>
+        <h1 class="logo-text">TaskFlow</h1>
+        <button id="btn-close-sidebar" class="icon-btn sidebar-close-btn" aria-label="Tutup sidebar">✕</button>
+      </div>
+
+      <!-- Dashboard stats -->
+      <section class="dash-section" aria-label="Ringkasan produktivitas">
+        <h2 class="section-title">Dashboard</h2>
+        <div class="dash-stats">
+          <div class="stat-card">
+            <span class="stat-value" id="stat-total">0</span>
+            <span class="stat-label">Total Tugas</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value" id="stat-done-today">0</span>
+            <span class="stat-label">Selesai Hari Ini</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value" id="stat-streak">0</span>
+            <span class="stat-label">Streak 🔥</span>
+          </div>
+        </div>
+
+        <!-- Completion ring -->
+        <div class="ring-wrap" aria-label="Tingkat penyelesaian">
+          <svg class="ring-svg" viewBox="0 0 80 80" aria-hidden="true">
+            <circle class="ring-bg" cx="40" cy="40" r="32" />
+            <circle class="ring-fill" id="ring-fill" cx="40" cy="40" r="32"
+                    stroke-dasharray="201.06" stroke-dashoffset="201.06" />
+          </svg>
+          <span class="ring-pct" id="ring-pct">0%</span>
+        </div>
+
+        <!-- Bar chart by category -->
+        <div class="bar-chart" id="bar-chart" aria-label="Tugas per kategori"></div>
+      </section>
+
+      <!-- Category filter -->
+      <nav class="filter-nav" aria-label="Filter kategori">
+        <h2 class="section-title">Kategori</h2>
+        <ul class="cat-list" id="cat-list">
+          <li><button class="cat-btn active" data-cat="semua" aria-pressed="true">Semua</button></li>
+          <li><button class="cat-btn" data-cat="Kuliah" aria-pressed="false">🎓 Kuliah</button></li>
+          <li><button class="cat-btn" data-cat="Kerja" aria-pressed="false">💼 Kerja</button></li>
+          <li><button class="cat-btn" data-cat="Pribadi" aria-pressed="false">🙂 Pribadi</button></li>
+          <li><button class="cat-btn" data-cat="Belanja" aria-pressed="false">🛒 Belanja</button></li>
+          <li><button class="cat-btn" data-cat="Lainnya" aria-pressed="false">📌 Lainnya</button></li>
+        </ul>
+      </nav>
+
+      <!-- Data tools -->
+      <div class="data-tools">
+        <h2 class="section-title">Data</h2>
+        <button id="btn-export" class="tool-btn" aria-label="Ekspor tugas ke JSON">⬇ Ekspor JSON</button>
+        <label class="tool-btn" for="import-file" aria-label="Impor tugas dari JSON">⬆ Impor JSON
+          <input type="file" id="import-file" accept=".json" hidden />
+        </label>
+        <button id="btn-clear-done" class="tool-btn danger-btn" aria-label="Hapus semua tugas selesai">🗑 Hapus Selesai</button>
+        <button id="btn-reset" class="tool-btn danger-btn" aria-label="Reset semua data">⚠ Reset Data</button>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content" id="main-content">
+
+      <!-- Top bar -->
+      <header class="topbar" role="banner">
+        <button id="btn-open-sidebar" class="icon-btn" aria-label="Buka sidebar">☰</button>
+        <span class="topbar-title">TaskFlow</span>
+
+        <!-- Search -->
+        <div class="search-wrap" role="search">
+          <label for="search-input" class="sr-only">Cari tugas</label>
+          <input type="search" id="search-input" class="search-input" placeholder="Cari tugas… (/)">
+        </div>
+
+        <div class="topbar-actions">
+          <!-- View toggle -->
+          <button id="btn-list-view" class="icon-btn active" aria-label="Tampilan daftar" title="Tampilan daftar">☰</button>
+          <button id="btn-kanban-view" class="icon-btn" aria-label="Tampilan kanban" title="Tampilan kanban">⊞</button>
+          <!-- Theme toggle -->
+          <button id="btn-theme" class="icon-btn" aria-label="Ganti tema terang/gelap" title="Ganti tema">🌙</button>
+        </div>
+      </header>
+
+      <!-- Filter bar -->
+      <div class="filter-bar" role="toolbar" aria-label="Filter dan Urutkan">
+        <div class="filter-group">
+          <label for="filter-status" class="sr-only">Filter status</label>
+          <select id="filter-status" class="filter-select" aria-label="Filter status">
+            <option value="semua">Semua Status</option>
+            <option value="aktif">Aktif</option>
+            <option value="selesai">Selesai</option>
+          </select>
+
+          <label for="filter-priority" class="sr-only">Filter prioritas</label>
+          <select id="filter-priority" class="filter-select" aria-label="Filter prioritas">
+            <option value="semua">Semua Prioritas</option>
+            <option value="Tinggi">Tinggi</option>
+            <option value="Sedang">Sedang</option>
+            <option value="Rendah">Rendah</option>
+          </select>
+
+          <label for="sort-by" class="sr-only">Urutkan berdasarkan</label>
+          <select id="sort-by" class="filter-select" aria-label="Urutkan berdasarkan">
+            <option value="newest">Terbaru</option>
+            <option value="duedate">Tenggat</option>
+            <option value="priority">Prioritas</option>
+          </select>
+        </div>
+
+        <div class="filter-actions">
+          <button id="btn-mark-all-done" class="btn-secondary btn-sm" aria-label="Tandai semua tugas aktif sebagai selesai">✓ Semua Selesai</button>
+          <button id="btn-add-task" class="btn-primary" aria-label="Tambah tugas baru (N)">+ Tugas Baru</button>
+        </div>
+      </div>
+
+      <!-- Quick-add bar -->
+      <div class="quick-add-wrap">
+        <label for="quick-add-input" class="sr-only">Tambah cepat dengan bahasa alami</label>
+        <input type="text" id="quick-add-input" class="quick-add-input"
+               placeholder='✨ Tambah cepat: "kumpul laporan besok jam 10 prioritas tinggi #kuliah"' />
+        <button id="btn-quick-add" class="btn-primary quick-add-btn" aria-label="Proses tambah cepat">Proses</button>
+      </div>
+
+      <!-- Quick-add preview -->
+      <div id="quick-preview" class="quick-preview hidden" role="status" aria-live="polite"></div>
+      <!-- Clarification prompt -->
+      <div id="quick-clarify" class="quick-clarify hidden" role="alert" aria-live="polite"></div>
+
+      <!-- TASK LIST VIEW -->
+      <div id="view-list" class="view-list">
+        <!-- Due today section -->
+        <section id="today-section" class="today-section hidden" aria-label="Tugas hari ini">
+          <h2 class="today-heading">📅 Hari Ini</h2>
+          <div id="today-list" class="task-list" role="list" aria-label="Tugas hari ini"></div>
+        </section>
+
+        <!-- Main list -->
+        <div id="task-list" class="task-list" role="list" aria-label="Daftar tugas"
+             aria-dropeffect="move"></div>
+        <div id="empty-state" class="empty-state hidden" role="status">
+          <p>Tidak ada tugas ditemukan. Tekan <kbd>N</kbd> untuk menambah tugas baru.</p>
+        </div>
+      </div>
+
+      <!-- KANBAN VIEW -->
+      <div id="view-kanban" class="view-kanban hidden" aria-label="Tampilan kanban">
+        <div class="kanban-col" id="kanban-todo" data-status="todo">
+          <h2 class="kanban-heading">📋 Akan Dikerjakan</h2>
+          <div class="kanban-items" role="list" aria-label="Akan dikerjakan"></div>
+        </div>
+        <div class="kanban-col" id="kanban-inprogress" data-status="inprogress">
+          <h2 class="kanban-heading">⚙️ Sedang Dikerjakan</h2>
+          <div class="kanban-items" role="list" aria-label="Sedang dikerjakan"></div>
+        </div>
+        <div class="kanban-col" id="kanban-done" data-status="done">
+          <h2 class="kanban-heading">✅ Selesai</h2>
+          <div class="kanban-items" role="list" aria-label="Selesai"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- =========================================================
+       POMODORO WIDGET (floating)
+  ========================================================= -->
+  <div id="pomodoro-widget" class="pomodoro-widget" role="timer" aria-label="Timer Pomodoro" style="display:none">
+    <div class="pomo-header">
+      <span class="pomo-title">🍅 Pomodoro</span>
+      <button id="btn-pomo-minimize" class="icon-btn" aria-label="Minimalkan timer">−</button>
+    </div>
+    <div id="pomo-body" class="pomo-body">
+      <div class="pomo-task-label" id="pomo-task-label">Tidak ada tugas</div>
+      <div class="pomo-display" aria-live="polite" id="pomo-display">25:00</div>
+      <div class="pomo-mode" id="pomo-mode">Fokus</div>
+      <div class="pomo-controls">
+        <button id="btn-pomo-start" class="icon-btn pomo-btn" aria-label="Mulai timer">▶</button>
+        <button id="btn-pomo-pause" class="icon-btn pomo-btn" aria-label="Jeda timer" disabled>⏸</button>
+        <button id="btn-pomo-reset" class="icon-btn pomo-btn" aria-label="Reset timer">↺</button>
+      </div>
+      <div class="pomo-flash" id="pomo-flash" aria-hidden="true"></div>
+    </div>
+  </div>
+  <button id="btn-open-pomo" class="btn-pomo-fab" aria-label="Buka Pomodoro timer">🍅</button>
+
+  <!-- =========================================================
+       TASK MODAL
+  ========================================================= -->
+  <div id="task-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-overlay" id="modal-overlay"></div>
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 id="modal-title" class="modal-title">Tugas Baru</h2>
+        <button id="btn-modal-close" class="icon-btn" aria-label="Tutup modal">✕</button>
+      </div>
+      <form id="task-form" novalidate>
+        <input type="hidden" id="task-id" />
+
+        <div class="form-row">
+          <label for="task-title" class="form-label">Judul <span aria-hidden="true">*</span></label>
+          <input type="text" id="task-title" class="form-input" placeholder="Judul tugas…"
+                 required maxlength="200" autocomplete="off" />
+          <span class="field-err" id="err-title" role="alert"></span>
+        </div>
+
+        <div class="form-row">
+          <label for="task-desc" class="form-label">Deskripsi</label>
+          <textarea id="task-desc" class="form-input form-textarea" placeholder="Deskripsi opsional…"
+                    maxlength="1000" rows="3"></textarea>
+          <span class="desc-counter" id="desc-counter" aria-live="polite">0/1000</span>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-row">
+            <label for="task-category" class="form-label">Kategori</label>
+            <select id="task-category" class="form-input form-select">
+              <option value="Kuliah">🎓 Kuliah</option>
+              <option value="Kerja">💼 Kerja</option>
+              <option value="Pribadi">🙂 Pribadi</option>
+              <option value="Belanja">🛒 Belanja</option>
+              <option value="Lainnya" selected>📌 Lainnya</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <label for="task-priority" class="form-label">Prioritas</label>
+            <select id="task-priority" class="form-input form-select">
+              <option value="Rendah">🟢 Rendah</option>
+              <option value="Sedang" selected>🟡 Sedang</option>
+              <option value="Tinggi">🔴 Tinggi</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-row">
+            <label for="task-due-date" class="form-label">Tanggal Tenggat</label>
+            <input type="date" id="task-due-date" class="form-input" />
+          </div>
+          <div class="form-row">
+            <label for="task-due-time" class="form-label">Jam Tenggat</label>
+            <input type="time" id="task-due-time" class="form-input" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label for="task-recur" class="form-label">Berulang</label>
+          <select id="task-recur" class="form-input form-select">
+            <option value="none">Tidak berulang</option>
+            <option value="daily">Harian</option>
+            <option value="weekly">Mingguan</option>
+            <option value="monthly">Bulanan</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label for="task-kanban-status" class="form-label">Status Kanban</label>
+          <select id="task-kanban-status" class="form-input form-select">
+            <option value="todo">Akan Dikerjakan</option>
+            <option value="inprogress">Sedang Dikerjakan</option>
+            <option value="done">Selesai</option>
+          </select>
+        </div>
+
+        <!-- Subtasks -->
+        <div class="form-row">
+          <label class="form-label">Subtugas</label>
+          <div id="subtask-list" class="subtask-list"></div>
+          <div class="subtask-add-row">
+            <input type="text" id="subtask-input" class="form-input subtask-input"
+                   placeholder="Tambah subtugas…" maxlength="200" />
+            <button type="button" id="btn-add-subtask" class="icon-btn" aria-label="Tambah subtugas">+</button>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="btn-modal-cancel" class="btn-secondary">Batal</button>
+          <button type="submit" id="btn-modal-save" class="btn-primary">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       DELETE CONFIRM MODAL
+  ========================================================= -->
+  <div id="confirm-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+    <div class="modal-overlay" id="confirm-overlay"></div>
+    <div class="modal-box modal-box-sm">
+      <h2 id="confirm-title" class="modal-title">Hapus Tugas?</h2>
+      <p id="confirm-msg" class="confirm-msg"></p>
+      <div class="modal-footer">
+        <button id="btn-confirm-cancel" class="btn-secondary">Batal</button>
+        <button id="btn-confirm-ok" class="btn-danger">Hapus</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       TOAST CONTAINER
+  ========================================================= -->
+  <div id="toast-container" class="toast-container" role="log" aria-live="polite" aria-label="Notifikasi"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
